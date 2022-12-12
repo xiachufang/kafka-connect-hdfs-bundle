@@ -31,7 +31,29 @@ dependencies {
 }
 
 shadowJar {
+    classifier = ''
     zip64 true
+}
+
+configurations {
+    fatJarRuntimeElements {
+        canBeResolved = false
+        canBeConsumed = true
+        attributes {
+            attribute(Usage.USAGE_ATTRIBUTE, objects.named(Usage, Usage.JAVA_RUNTIME))
+            attribute(Category.CATEGORY_ATTRIBUTE, objects.named(Category, Category.LIBRARY))
+            attribute(LibraryElements.LIBRARY_ELEMENTS_ATTRIBUTE, objects.named(LibraryElements, LibraryElements.JAR))
+            attribute(Bundling.BUNDLING_ATTRIBUTE, objects.named(Bundling, Bundling.EMBEDDED)) // means no relocation of packages
+            attribute(TargetJvmVersion.TARGET_JVM_VERSION_ATTRIBUTE, 8)
+        }
+        outgoing.artifact(shadowJar)
+    }
+}
+
+components.java {
+    addVariantsFromConfiguration(configurations.fatJarRuntimeElements) {
+        mapToOptional()
+    }
 }
 
 publishing {
@@ -73,12 +95,6 @@ publishing {
         }
     }
     repositories {
-        maven {
-            // change URLs to point to your repos, e.g. http://my.org/repo
-            def releasesRepoUrl = layout.buildDirectory.dir('repos/releases')
-            def snapshotsRepoUrl = layout.buildDirectory.dir('repos/snapshots')
-            url = version.endsWith('SNAPSHOT') ? snapshotsRepoUrl : releasesRepoUrl
-        }
         maven {
             url "https://oss.sonatype.org/service/local/staging/deploy/maven2"
             credentials {
