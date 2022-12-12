@@ -1,0 +1,101 @@
+plugins {
+    id 'java'
+    id 'com.github.johnrengelman.shadow' version '7.1.2'
+    id "java-library"
+    id "maven-publish"
+    id 'signing'
+}
+
+group 'com.xiachufang'
+version '10.1.13'
+
+
+java {
+    withJavadocJar()
+    withSourcesJar()
+}
+
+repositories {
+    mavenCentral()
+    maven {
+        url "https://packages.confluent.io/maven/"
+    }
+    maven {
+        url "https://maven.aliyun.com/repository/spring"
+    }
+}
+
+dependencies {
+    implementation 'io.confluent:kafka-connect-hdfs:10.1.13'
+    testImplementation group: 'junit', name: 'junit', version: '4.12'
+}
+
+shadowJar {
+    zip64 true
+}
+
+publishing {
+    publications{
+        mavenJava(MavenPublication) {
+            artifactId = 'kafka-connect-hdfs-bundle'
+            from components.java
+            versionMapping {
+                usage('java-api') {
+                    fromResolutionOf('runtimeClasspath')
+                }
+                usage('java-runtime') {
+                    fromResolutionResult()
+                }
+            }
+            pom {
+                name = 'kafka connect hdfs bundle jar(fat jar)'
+                description = 'kafka connect hdfs bundle jar(fat jar)'
+                url = 'http://github.com/xiachufang/kafka-connect-hdfs-bundle'
+                licenses {
+                    license {
+                        name = 'The Apache License, Version 2.0'
+                        url = 'http://www.apache.org/licenses/LICENSE-2.0.txt'
+                    }
+                }
+                developers {
+                    developer {
+                        id = 'cadl'
+                        name = 'liu jialin'
+                        email = 'ctrlaltdeleteliu@gmail.com'
+                    }
+                }
+                scm {
+                    connection = 'scm:git:git://github.com/xiachufang/kafka-connect-hdfs-bundle.git'
+                    developerConnection = 'scm:git:ssh://github.com/xiachufang/kafka-connect-hdfs-bundle.git'
+                    url = 'http://github.com/xiachufang/kafka-connect-hdfs-bundle'
+                }
+            }
+        }
+    }
+    repositories {
+        maven {
+            // change URLs to point to your repos, e.g. http://my.org/repo
+            def releasesRepoUrl = layout.buildDirectory.dir('repos/releases')
+            def snapshotsRepoUrl = layout.buildDirectory.dir('repos/snapshots')
+            url = version.endsWith('SNAPSHOT') ? snapshotsRepoUrl : releasesRepoUrl
+        }
+        maven {
+            url "https://oss.sonatype.org/service/local/staging/deploy/maven2"
+            credentials {
+                username sonatypeUsername
+                password sonatypePassword
+            }
+        }
+    }
+}
+
+signing {
+    sign publishing.publications.mavenJava
+}
+
+
+javadoc {
+    if(JavaVersion.current().isJava9Compatible()) {
+        options.addBooleanOption('html5', true)
+    }
+}
